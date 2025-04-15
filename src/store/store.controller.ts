@@ -22,6 +22,7 @@ export class StoreController {
       throw new NotFoundException(`A loja com o id ${id} não foi encontrada.`);
     }
     console.log(`A loja ${store.storeName} (StoreID ${id}) foi retornada com sucesso.`);
+    
     return store;
   }
 }

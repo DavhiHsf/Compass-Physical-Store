@@ -1,13 +1,24 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dbConfig } from './database/db-config';
 import { StoreModule } from './store/store.module';
+import { OrsModule } from './integrations/ors/ors.module';
+import { ViaCepModule } from './integrations/viacep/viacep.module';
+
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(dbConfig), StoreModule
+    TypeOrmModule.forRoot(dbConfig),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env'],
+    }),
+    StoreModule,
+    OrsModule,
+    ViaCepModule,
   ],
   controllers: [AppController],
   providers: [AppService],
