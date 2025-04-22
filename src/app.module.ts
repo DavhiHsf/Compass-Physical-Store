@@ -5,8 +5,10 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dbConfig } from './database/db-config';
 import { StoreModule } from './store/store.module';
-import { OrsModule } from './integrations/ors/ors.module';
+import { MapboxModule } from './integrations/mapbox/mapbox.module';
 import { ViaCepModule } from './integrations/viacep/viacep.module';
+import { MelhorEnvioModule } from './integrations/melhor-envio/melhor-envio.module';
+import { OrsModule } from './integrations/ors/ors.module';
 
 
 @Module({
@@ -17,8 +19,10 @@ import { ViaCepModule } from './integrations/viacep/viacep.module';
       envFilePath: ['.env'],
     }),
     StoreModule,
-    OrsModule,
+    MapboxModule,
     ViaCepModule,
+    MelhorEnvioModule,
+    OrsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
