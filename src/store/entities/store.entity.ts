@@ -3,10 +3,10 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 @Entity()
 export class Store {
   @PrimaryGeneratedColumn('increment')
-  storeID: number;
+  ID: number;
 
   @Column()
-  storeName: string;
+  name: string;
 
   @Column()
   street: string;
