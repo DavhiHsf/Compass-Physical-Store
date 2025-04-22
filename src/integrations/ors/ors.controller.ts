@@ -1,24 +1,26 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { OrsIntegration } from './ors.service';
+import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { OrsService } from './ors.service';
+import { DistanceResponseDto } from './distance-response.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-@Controller('ors')
+@ApiTags('OpenRouteService')
+@Controller('calculateDistance')
 export class OrsController {
-  constructor(private readonly orsIntegration: OrsIntegration) {}
+  constructor(private readonly orsService: OrsService) {}
 
-  @Get('test-route')
-  async testRoute(
-    @Query('startLat') startLat: number,
-    @Query('startLon') startLon: number,
-    @Query('endLat') endLat: number,
-    @Query('endLon') endLon: number,
-  ) {
-    const distance = await this.orsIntegration.rescueRouteDistance(
-      { lat: startLat, lon: startLon },
-      { lat: endLat, lon: endLon },
-    );
-
+  @Post()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Calcula a distância entre dois pontos usando a API OpenRouteService' })
+  @ApiResponse({
+    status: 200,
+    description: 'Distâncias calculadas com sucesso',
+  })
+  async calculateDistance(@Body() body: DistanceResponseDto) {
+    const result = await this.orsService.calculateDistance(body.from, body.to);
     return {
-      distanceInKm: (distance.distance / 1000).toFixed(2) + ' km',
+      'origem': body.from,
+      'destino(s)': body.to,
+      distancias: result.distances.map(d => `${(d / 1000).toFixed(2)} km`),
     };
   }
 }

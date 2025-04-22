@@ -1,54 +1,74 @@
-import { Injectable } from '@nestjs/common';
-import axios from 'axios';
+import { Injectable, Logger } from '@nestjs/common';
+import axios, { AxiosResponse } from 'axios';
 
-interface Coordinates {
-  lat: number;
-  lon: number;
-}
-
-interface RouteDistanceResponse {
-    distance: number;
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
 }
 
 @Injectable()
-export class OrsIntegration {
+export class OrsService {
+  private readonly logger = new Logger(OrsService.name);
 
-    private readonly apiKey = process.env.ORS_API_KEY;
+  private readonly apiKey = process.env.ORS_API_KEY;
 
-    private readonly urlBase = 'https://api.openrouteservice.org/v2/directions/driving-car';
+  private readonly orsUrl = 'https://api.openrouteservice.org/v2/matrix/driving-car';
 
-    async rescueRouteDistance(
-        start: Coordinates, 
-        end: Coordinates,
-    ): Promise<RouteDistanceResponse> {
+  async calculateDistance(
+    origin: Coordinates,
+    destinations: Coordinates[],
+  ): Promise<{ distances: number[]; }> {
+    try {
+      this.logger.log('Calculando distância com os seguintes parâmetros:');
+      
+      this.logger.log(`Origem: ${JSON.stringify(origin)}`);
 
-        try {
-            const response = await axios.post(
-                this.urlBase,
-                {
-                    coordinates: [
-                        [start.lon, start.lat],
-                        [end.lon, end.lat]
-                    ],
-                    format: 'geojson'
-                },
-                {
-                    headers: {
-                        'Authorization': this.apiKey,
-                        'Content-Type': 'application/json'
-                    },
-                },
-            );
+      this.logger.log(`Destinos: ${JSON.stringify(destinations)}`);
 
-            const summary = response.data.routes[0].summary;
+      if (!Array.isArray(destinations)) {
+        this.logger.warn('Destino enviado como objeto único. Convertendo para array...');
+        destinations = [destinations];
+      }
 
-            return {
-                distance: summary.distance,
-            };
+      const allLocations = [
+        [origin.longitude, origin.latitude],
+        ...destinations.map(dest => [dest.longitude, dest.latitude]),
+      ];
 
-        } catch (error) {
-            console.error('Erro ao consultar rota no ORS:', error);
-            throw new Error('Erro ao calcular rota com ORS');
+      const response: AxiosResponse = await axios.post(
+        this.orsUrl,
+        {
+          locations: allLocations,
+          sources: [0],
+          destinations: destinations.map((_, index) => index + 1),
+          metrics: ['distance'],
+          units: 'm',
+        },
+        {
+          headers: {
+            Authorization: this.apiKey,
+            'Content-Type': 'application/json',
+          },
         }
+      );
+
+      if (!response.data || !response.data.distances || !Array.isArray(response.data.distances[0])) {
+        this.logger.error('Resposta da ORS mal formatada:', response.data);
+        throw new Error('Resposta da ORS mal formatada!');
+      }
+
+      const distances = response.data.distances?.[0] || [];
+
+      this.logger.log(`Distâncias calculadas: ${JSON.stringify(distances)}`);
+
+
+      return {
+        distances
+      };
+
+    } catch (error: any) {
+      this.logger.error('Erro ao chamar ORS:', error.response?.data || error.message);
+      throw new Error('Erro ao calcular distâncias entre os pontos!');
     }
+  }
 }
